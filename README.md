@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/tzkmx/mithril-streams-php.svg?branch=master)](https://travis-ci.org/tzkmx/mithril-streams-php)
+[![Maintainability](https://api.codeclimate.com/v1/badges/6c99cb7ee438c43e7b5c/maintainability)](https://codeclimate.com/github/tzkmx/mithril-streams-php/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/6c99cb7ee438c43e7b5c/test_coverage)](https://codeclimate.com/github/tzkmx/mithril-streams-php/test_coverage)
+
 # Observables de Mithril (streams), en PHP
 
 mithril-stream facilita un estilo de desarrollo basado en el patrón Observador,
