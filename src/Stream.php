@@ -44,10 +44,14 @@ class Stream
         if ($newValue !== Stream::SKIP) {
             $this->state = 'active';
 
+            
             foreach ($this->dependentStreams as $idx => $stream) {
                 $callable = $this->dependentFns[$idx];
 
-                $stream(call_user_func($callable, $newValue));
+                if (is_callable($callable)) {
+                    $val = call_user_func($callable, $newValue);
+                    $stream($val);
+                }
             }
 
             return $this->value = $newValue;
@@ -83,32 +87,39 @@ class Stream
             return $stream->state === 'active';
         });
 
-        $stream = $ready ? new Stream(call_user_func($combiner, $streams)) : new Stream();
+        $newStream = $ready ? new Stream(call_user_func($combiner, $streams)) : new Stream();
 
-        $changed = [];
+        $mappers = [];
+        
+        $delegate = self::makeDelegate($combiner, $ready, $newStream, $streams);
+        foreach ($streams as $originStream) {
+            $mappers[] = $originStream->map(
+                $delegate,
+                Stream::SKIP
+            );
+        }
 
-        $mappers = array_map(function ($mappedStream)
-            use ($streams, $ready, $stream, $combiner, $changed) {
+        return $newStream;
+    }
 
-            return $stream->map(function ($value)
-                use ($mappedStream, $streams, $ready, $stream, $combiner, $changed) {
-                
-                array_push($changed, $mappedStream);
+    public static function isNotPending(Stream $stream)
+    {
+        return $stream->state !== 'pending';
+    }
 
-                if ($ready || array_every($streams, function ($checkedStream)
-                    use ($stream, $combiner, $changed) {
-                    return $checkedStream->state !== 'pending';
-                })) {
-                    $ready = true;
-                    $stream(call_user_func($combiner, $streams));
-                    $changed = [];
-                }
-
-                return $value;
-
-            }, Stream::SKIP);
-        }, $streams);
-
-        return $stream;
+    protected static function makeDelegate(
+        callable $combiner,
+        bool &$isReady,
+        Stream $newStream,
+        array &$streams
+    ) {
+        return function ($value) use ($combiner, &$isReady, $newStream, &$streams) {
+            if ($isReady || array_every($streams, __CLASS__ . '::isNotPending')) {
+                $isReady = true;
+                $streamValues = array_map(function ($s) { return $s(); }, $streams);
+                $newValue = $combiner->call(new self($streamValues)); 
+                $newStream($newValue);
+            }
+        };
     }
 }
