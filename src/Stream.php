@@ -38,7 +38,7 @@ class Stream
 
         $newValue = $args[0];
 
-        if ($newValue !== self::SKIP) {
+        if ($newValue !== Stream::SKIP) {
             $this->state = 'active';
 
             foreach ($this->dependentStreams as $idx => $stream) {
@@ -51,9 +51,11 @@ class Stream
         }
     }
 
-    public function map(callable $fn)
+    public function map(callable $fn, $ignoreInitial = false)
     {
-        $target = new self(call_user_func($fn, $this->value));
+        $target = $this->state === 'active' && $ignoreInitial !== Stream::SKIP
+            ? new self(call_user_func($fn, $this->value))
+            : new self();
         
         array_push($target->parents, $this);
 
@@ -67,5 +69,44 @@ class Stream
     protected function isOpen(Stream $stream)
     {
         return $stream->state === 'pending' || $stream->state === 'active';
+    }
+
+    public static function combine(callable $combiner, array $streams)
+    {
+        $ready = array_every($streams, function ($stream) {
+            if (!$stream instanceof Stream) {
+                throw new TypeError("Ensure that each item passed to Stream::combine/Stream::merge/lift is a Stream");
+            }
+
+            return $stream->state === 'active';
+        });
+
+        $stream = $ready ? new Stream(call_user_func($combiner, $streams)) : new Stream();
+
+        $changed = [];
+
+        $mappers = array_map(function ($mappedStream)
+            use ($streams, $ready, $stream, $combiner, $changed) {
+
+            return $stream->map(function ($value)
+                use ($mappedStream, $streams, $ready, $stream, $combiner, $changed) {
+                
+                array_push($changed, $mappedStream);
+
+                if ($ready || array_every($streams, function ($checkedStream)
+                    use ($stream, $combiner, $changed) {
+                    return $checkedStream->state !== 'pending';
+                })) {
+                    $ready = true;
+                    $stream(call_user_func($combiner, $streams));
+                    $changed = [];
+                }
+
+                return $value;
+
+            }, Stream::SKIP);
+        }, $streams);
+
+        return $stream;
     }
 }
