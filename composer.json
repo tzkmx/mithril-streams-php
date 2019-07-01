@@ -12,6 +12,16 @@
             "email": "jefrancomix@gmail.com"
         }
     ],
+    "autoload": {
+      "psr-4": {
+        "Jefrancomix\\MithrilStreams\\": "src/"
+      }
+    },
+    "autoload-dev": {
+      "psr-4": {
+        "Jefrancomix\\MithrilStreams\\Tests\\": "tests/"
+      }
+    },
     "require": {},
     "config": {
       "platform": {
