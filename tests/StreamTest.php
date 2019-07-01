@@ -19,4 +19,22 @@ class StreamTest extends TestCase
 
         $this->assertEquals($expectedValue2, $stream());
     }
+
+    public function testHasNullValueAsDefault()
+    {
+        $stream = new Stream();
+
+        $this->assertNull($stream());
+    }
+
+    public function testCanUpdateToUndefined()
+    {
+        $stream = new Stream('test');
+
+        $this->assertEquals('test', $stream());
+
+        $stream(null);
+
+        $this->assertNull($stream());
+    }
 } 

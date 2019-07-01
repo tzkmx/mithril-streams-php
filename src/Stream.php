@@ -4,16 +4,22 @@ namespace Jefrancomix\MithrilStreams;
 class Stream
 {
     protected $value;
-    public function __construct($value)
+    public function __construct($value = null)
     {
         $this->value = $value;
     }
 
-    public function __invoke($newValue = null)
+    public function __invoke()
     {
-        if (is_null($newValue)) {
+        $args = func_get_args();
+        if (count($args) === 0) {
             return $this->value;
         }
-        $this->value = $newValue;
+
+        $newValue = $args[0];
+
+        return $this->value = $newValue;
     }
+
+
 }
