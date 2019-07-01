@@ -26,6 +26,9 @@ class Stream
 
     public function __construct($value = null)
     {
+        if (!is_null($value)) {
+            $this->state = 'active';
+        }
         $this->value = $value;
     }
 
@@ -54,9 +57,8 @@ class Stream
     public function map(callable $fn, $ignoreInitial = false)
     {
         $target = $this->state === 'active' && $ignoreInitial !== Stream::SKIP
-            ? new self(call_user_func($fn, $this->value))
-            : new self();
-        
+            ? new Stream(call_user_func($fn, $this->value))
+            : new Stream();
         array_push($target->parents, $this);
 
         array_push($this->dependentStreams, $target);
