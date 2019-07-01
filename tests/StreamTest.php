@@ -37,4 +37,29 @@ class StreamTest extends TestCase
 
         $this->assertNull($stream());
     }
+
+    public function testCanBeStreamOfStreams()
+    {
+        $stream = new Stream(new Stream(1));
+
+        $this->assertEquals(1, $stream()());
+    }
+
+    public function testCanSKIP()
+    {
+        $stream = new Stream(2);
+
+        $depStream = $stream->map(function ($value) {
+            return $value === 5
+                ? Stream::SKIP
+                : $value;
+        });
+        $this->assertEquals(2, $depStream());
+
+        $stream(5);
+        $this->assertEquals(2, $depStream());
+
+        $stream(1);
+        $this->assertEquals(1, $depStream());
+    }
 } 
